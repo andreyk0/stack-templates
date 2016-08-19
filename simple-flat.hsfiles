@@ -18,6 +18,8 @@ tags:
 sources:
 	stack-unpack-dependencies
 
+.PHONY: build build-prof clean tags sources
+
 
 {-# START_FILE {{name}}.cabal #-}
 name:                {{name}}
