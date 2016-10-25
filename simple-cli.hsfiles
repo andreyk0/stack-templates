@@ -60,7 +60,7 @@ executable {{name}}
 
   default-language:    Haskell2010
 
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -threaded
 
 
 {-# START_FILE Setup.hs #-}
@@ -117,8 +117,8 @@ runWithArgs rwa = execParser opts >>= rwa
   where
     opts = info (helper <*> parseArgs)
       ( fullDesc
-     <> progDesc ( "Add program description here")
-     <> header "Add program header here." )
+     <> header "Add program header here."
+     <> progDesc "Add program description here")
 
 
 {-# START_FILE Main.hs #-}
