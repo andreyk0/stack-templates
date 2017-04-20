@@ -56,7 +56,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable {{name}}
-  hs-source-dirs:      .
+  hs-source-dirs:      src
 
   main-is:             Main.hs
 
@@ -90,11 +90,7 @@ executable {{name}}
 import Distribution.Simple
 main = defaultMain
 
-{-# START_FILE Args.hs #-}
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE RecordWildCards  #-}
-{-# LANGUAGE TemplateHaskell  #-}
-
+{-# START_FILE src/Args.hs #-}
 module Args (
   Args(..)
 , parseCliArgs
@@ -148,7 +144,7 @@ parseCliArgs = execParser opts
      <> header "Add program header here."
      <> progDesc "Add program description here. Source: https://github.com/{{github-username}}{{^github-username}}githubuser{{/github-username}}/{{name}}")
 
-{-# START_FILE App.hs #-}
+{-# START_FILE src/App.hs #-}
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -159,6 +155,7 @@ module App (
   getArgs
 , isVerbose
 , runApp
+, tshow
 ) where
 
 import           Args
@@ -168,11 +165,14 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Reader
 import           Data.Monoid
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           Development.GitRev
 import           System.Exit
 
 
 data AppState = AppState { asArgs :: !Args
+                           -- more state
                          }
 
 
@@ -188,12 +188,14 @@ newtype App a =
                  , MonadThrow
                  )
 
-
 isVerbose :: App Bool
 isVerbose = fmap argsVerbose getArgs
 
 getArgs :: App Args
 getArgs = App $ fmap asArgs ask
+
+tshow :: (Show a) => a -> Text
+tshow = T.pack . show
 
 
 runApp :: App a
@@ -203,12 +205,12 @@ runApp appA  = do
 
   when argsVersion $ die $ "Version: " <> $(gitBranch) <> "@" <> $(gitHash)
 
-  let llf _ ll = if argsVerbose then True else (ll >= LevelInfo)
+  let llf _ ll = argsVerbose || ll >= LevelInfo
 
   runStderrLoggingT $ filterLogger llf $ runReaderT (unApp appA) (AppState args)
 
 
-{-# START_FILE Main.hs #-}
+{-# START_FILE src/Main.hs #-}
 {-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE RecordWildCards    #-}
 {-# LANGUAGE TemplateHaskell    #-}
