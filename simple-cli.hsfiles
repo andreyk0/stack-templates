@@ -13,7 +13,7 @@ build:
 	stack build {{name}}
 
 build-prof:
-	stack build --profile --ghc-options="-rtsopts" {{name}}
+	stack build --profile --ghc-options="-rtsopts -auto-all" {{name}}
 
 install:
 	stack install {{name}}
