@@ -96,10 +96,7 @@ module Args (
 , parseCliArgs
 ) where
 
-
-import           Data.Monoid
 import           Options.Applicative
-
 
 data Custom = Custom1 | Custom2 deriving (Eq, Show, Ord)
 
@@ -164,7 +161,6 @@ import           Control.Monad.Catch
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Reader
-import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Development.GitRev
