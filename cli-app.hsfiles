@@ -11,6 +11,7 @@ DIST_EXE_SIG=$(DIST_EXE).sig
 
 build:
 	stack build $(STACK_OPTS) {{name}}
+	find src -name '*.hs' | xargs hlint
 
 build-prof:
 	stack build $(STACK_OPTS) --profile --ghc-options="-rtsopts -fprof-auto" {{name}}
@@ -74,6 +75,7 @@ executable {{name}}
                      , monad-control
                      , monad-logger
                      , monad-loops
+                     , mtl
                      , optparse-applicative
                      , text
                      , transformers
@@ -91,10 +93,13 @@ import Distribution.Simple
 main = defaultMain
 
 {-# START_FILE src/Args.hs #-}
-module Args (
-  Args(..)
-, parseCliArgs
-) where
+{-# LANGUAGE LambdaCase #-}
+
+module Args
+  (
+    Args(..)
+  , parseCliArgs
+  ) where
 
 import           Options.Applicative
 
@@ -103,6 +108,8 @@ data Custom = Custom1 | Custom2 deriving (Eq, Show, Ord)
 
 data Args = Args { argsVerbose :: !Bool
                  , argsVersion :: !Bool
+                 , argsUser :: !String
+                 , argsHost :: !String
                  , argsCustom :: !Custom
                  } deriving (Show)
 
@@ -117,6 +124,16 @@ parseArgs = Args
          ( long "version"
         <> short 'V'
         <> help "Print version and exit.")
+     <*> strOption
+         ( long "user"
+        <> short 'u'
+        <> help "App user" )
+     <*> strOption
+         ( long "host"
+        <> short 'h'
+        <> value "localhost"
+        <> showDefault
+        <> help "App host" )
      <*> option parseCustomArg
          ( long "custom-arg"
         <> short 'c'
@@ -126,11 +143,10 @@ parseArgs = Args
 
 
 parseCustomArg :: ReadM Custom
-parseCustomArg = eitherReader $ \s ->
-  case s
-    of "c1" -> Right Custom1
-       "c2" -> Right Custom2
-       x    -> Left $ "Failed to parse custom argument " <> x <> ", expected 'c1' or 'c2'"
+parseCustomArg = eitherReader $ \case
+    "c1" -> Right Custom1
+    "c2" -> Right Custom2
+    x    -> Left $ "Failed to parse custom argument " <> x <> ", expected 'c1' or 'c2'"
 
 
 parseCliArgs :: IO Args
@@ -148,23 +164,29 @@ parseCliArgs = execParser opts
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TemplateHaskell            #-}
 
-module App (
-  getArgs
-, isVerbose
-, runApp
-, tshow
-) where
+module App
+  (
+    askUser
+  , getArgs
+  , isVerbose
+  , runApp
+  , tshow
+  , withTerminalEcho
+  ) where
+
 
 import           Args
 import           Control.Monad
 import           Control.Monad.Catch
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
-import           Control.Monad.Trans.Reader
+import           Control.Monad.Reader
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import           Development.GitRev
 import           System.Exit
+import           System.IO
 
 
 data AppState = AppState { asArgs :: !Args
@@ -181,6 +203,7 @@ newtype App a =
                  , MonadIO
                  , MonadLogger
                  , MonadLoggerIO
+                 , MonadReader AppState
                  , MonadThrow
                  )
 
@@ -188,10 +211,33 @@ isVerbose :: App Bool
 isVerbose = fmap argsVerbose getArgs
 
 getArgs :: App Args
-getArgs = App $ fmap asArgs ask
+getArgs = asks asArgs
 
 tshow :: (Show a) => a -> Text
 tshow = T.pack . show
+
+-- | Control terminal echo, flush stdin, for user interaction
+withTerminalEcho :: Bool -- ^ echo user input to terminal
+                 -> IO a -- ^ IO action
+                 -> IO a
+withTerminalEcho echo action = do
+  hFlush stdout
+  old <- hGetEcho stdin
+  bracket_ (hSetEcho stdin echo)
+           (do hSetEcho stdin old ; hFlush stdout)
+           action
+
+-- | Prompt user for input
+askUser :: (MonadIO m)
+        => Text -- ^ user prompt
+        -> m Text
+askUser prompt = liftIO $ do
+  TIO.putStr prompt
+  hFlush stdout
+  x <- TIO.getLine
+  TIO.putStrLn ""
+  hFlush stdout
+  pure x
 
 
 runApp :: App a
@@ -202,7 +248,6 @@ runApp appA  = do
   when argsVersion $ die $ "Version: " <> $(gitBranch) <> "@" <> $(gitHash)
 
   let llf _ ll = argsVerbose || ll >= LevelInfo
-
   runStderrLoggingT $ filterLogger llf $ runReaderT (unApp appA) (AppState args)
 
 
