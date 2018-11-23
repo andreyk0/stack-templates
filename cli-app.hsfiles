@@ -29,16 +29,9 @@ bindist:
 
 clean:
 	stack clean
-	rm -rf target
+	rm -rf $(TARGET)
 
-tags:
-	hasktags-generate .
-
-sources:
-	stack-unpack-dependencies
-
-
-.PHONY: build build-prof clean tags sources
+.PHONY: build build-prof clean
 
 
 {-# START_FILE package.yaml #-}
