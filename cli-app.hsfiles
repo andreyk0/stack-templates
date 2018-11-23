@@ -12,7 +12,7 @@ DIST_EXE_SIG=$(DIST_EXE).sig
 
 build:
 	stack build $(STACK_OPTS) {{name}}
-	find src -name '*.hs' | xargs hlint
+	hlint src
 
 build-prof:
 	stack build $(STACK_OPTS) --profile --ghc-options="-rtsopts -fprof-auto" {{name}}
