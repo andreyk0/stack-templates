@@ -33,6 +33,9 @@ clean:
 
 .PHONY: build build-prof clean
 
+{-# START_FILE bin/{{name}} #-}
+#!/bin/bash
+exec stack exec {{name}} -- "$@"
 
 {-# START_FILE package.yaml #-}
 name: {{name}}
@@ -149,7 +152,8 @@ parseCliArgs = execParser opts
 
 module App
   (
-    askUser
+    App
+  , askUser
   , getArgs
   , isVerbose
   , runApp
