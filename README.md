@@ -9,7 +9,5 @@ Custom stack templates.
 Linking to GH directly:
 
 ```bash
-# stack new projectname https://raw.githubusercontent.com/andreyk0/stack-templates/master/simple-cli.hsfiles
-# stack new projectname https://raw.githubusercontent.com/andreyk0/stack-templates/master/simple-flat.hsfiles
-# stack new projectname https://raw.githubusercontent.com/andreyk0/stack-templates/master/yesod-minimal.hsfiles
+# stack new projectname https://raw.githubusercontent.com/andreyk0/stack-templates/master/cli-app.hsfiles
 ```
