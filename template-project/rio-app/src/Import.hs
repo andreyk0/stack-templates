@@ -1,8 +1,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+
+-- | Project-level default imports including Prelude replacement
 module Import
   ( module RIO
-  , module Types
   ) where
 
-import RIO
-import Types
+import           RIO

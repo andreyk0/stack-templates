@@ -1,20 +1,20 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-module Types where
+module App where
 
-import RIO
-import RIO.Process
+import           RIO
+import           RIO.Process
 
 -- | Command line arguments
 data Options = Options
-  { optionsVerbose :: !Bool
-  }
+    { optionsVerbose :: !Bool
+    }
 
 data App = App
-  { appLogFunc :: !LogFunc
-  , appProcessContext :: !ProcessContext
-  , appOptions :: !Options
-  -- Add other app-specific configuration information here
-  }
+    { appLogFunc        :: !LogFunc
+    , appProcessContext :: !ProcessContext
+    , appOptions        :: !Options
+    -- Add other app-specific configuration information here
+    }
 
 instance HasLogFunc App where
   logFuncL = lens appLogFunc (\x y -> x { appLogFunc = y })

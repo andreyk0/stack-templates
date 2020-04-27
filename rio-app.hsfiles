@@ -57,16 +57,42 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import Distribution.Simple
 main = defaultMain
 
+{-# START_FILE app/App.hs #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+module App where
+
+import           RIO
+import           RIO.Process
+
+-- | Command line arguments
+data Options = Options
+    { optionsVerbose :: !Bool
+    }
+
+data App = App
+    { appLogFunc        :: !LogFunc
+    , appProcessContext :: !ProcessContext
+    , appOptions        :: !Options
+    -- Add other app-specific configuration information here
+    }
+
+instance HasLogFunc App where
+  logFuncL = lens appLogFunc (\x y -> x { appLogFunc = y })
+instance HasProcessContext App where
+  processContextL = lens appProcessContext (\x y -> x { appProcessContext = y })
+
 {-# START_FILE app/Main.hs #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell   #-}
+
 module Main (main) where
 
-import Import
-import Run
-import RIO.Process
-import Options.Applicative.Simple
+import           App
+import           Import
+import           Options.Applicative.Simple
 import qualified Paths_{{name-as-varid}}
+import           RIO.Process
+import           Run
 
 main :: IO ()
 main = do
@@ -90,6 +116,19 @@ main = do
           , appOptions = options
           }
      in runRIO app run
+
+{-# START_FILE app/Run.hs #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module Run (run) where
+
+import           App
+import           Import
+
+run :: RIO App ()
+run = do
+  logInfo "We're inside the application!"
 
 {-# START_FILE package.yaml #-}
 name:                {{name}}
@@ -157,48 +196,13 @@ tests:
 
 {-# START_FILE src/Import.hs #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+
+-- | Project-level default imports including Prelude replacement
 module Import
   ( module RIO
-  , module Types
   ) where
 
-import RIO
-import Types
-
-{-# START_FILE src/Run.hs #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-module Run (run) where
-
-import Import
-
-run :: RIO App ()
-run = do
-  logInfo "We're inside the application!"
-
-{-# START_FILE src/Types.hs #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-module Types where
-
-import RIO
-import RIO.Process
-
--- | Command line arguments
-data Options = Options
-  { optionsVerbose :: !Bool
-  }
-
-data App = App
-  { appLogFunc :: !LogFunc
-  , appProcessContext :: !ProcessContext
-  , appOptions :: !Options
-  -- Add other app-specific configuration information here
-  }
-
-instance HasLogFunc App where
-  logFuncL = lens appLogFunc (\x y -> x { appLogFunc = y })
-instance HasProcessContext App where
-  processContextL = lens appProcessContext (\x y -> x { appProcessContext = y })
+import           RIO
 
 {-# START_FILE src/Util.hs #-}
 {-# LANGUAGE NoImplicitPrelude #-}
